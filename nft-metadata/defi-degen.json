@@ -1,0 +1,34 @@
+{   
+   "description": "The DeFi Degen is a species in constant movement due to its diet based on high APY. Tireless and without risk aversion, they are not afraid of “rug pulls” and will always go one step further to obtain those juicy returns. Beware of them, as they might spread FOMO as they move around the DeFi jungle.",      
+   "external_url": "https://heroesonchain.com/heroes/defi-degen/", 
+   "image": "ipfs://ipfsQmRR2wEhhGeGzsm3ERKinLDWdC1i1engd9nhst5HVBd9a7",  
+   "name": "DeFi Degen",   
+   "attributes": [
+    	{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "Interoperability", 
+			"value": "90" 
+		},
+
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "Pumpdamentals", 
+			"value": "70" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FOMO", 
+			"value": "80" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FUD", 
+			"value": "20" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "Community", 
+			"value": "90" 
+		}
+   ]
+}
