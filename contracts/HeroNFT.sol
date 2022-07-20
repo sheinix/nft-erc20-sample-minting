@@ -17,7 +17,7 @@ contract HeroNFT is ERC721, ERC721Burnable, Ownable, VRFConsumerBaseV2 {
 
     // ChainLink variables:
     VRFCoordinatorV2Interface COORDINATOR;
-    //@notice the mumbai network chainlink vrf coordinator contract for generating random numbers:
+    // @notice the mumbai network chainlink vrf coordinator contract for generating random numbers:
     // https://docs.chain.link/docs/vrf-contracts/#polygon-matic-mainnet
     address vrfCoordinator = 0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed;
 
@@ -40,10 +40,10 @@ contract HeroNFT is ERC721, ERC721Burnable, Ownable, VRFConsumerBaseV2 {
     uint256 public s_requestId;
 
     // Contract Variables:
-    //@notice the relation between heroType and tokenID
+    // @notice the relation between heroType and tokenID
     mapping(uint256 => string) heroType;
 
-    //@notice the reference to the token that will be used as payment for minting
+    // @notice the reference to the token that will be used as payment for minting
     address public token;
 
     Counters.Counter private _tokenIdCounter;
@@ -78,10 +78,14 @@ contract HeroNFT is ERC721, ERC721Burnable, Ownable, VRFConsumerBaseV2 {
         return "ipfs://QmPpRpHoC44yE4Jfby583k4HETA4xuCLaACz61sw8URibY";
     }
 
+    function getTokenIdCounter() public virtual returns (uint256) {
+        return _tokenIdCounter.current();
+    }
+
     function safeMint(address to) public onlyOwner {
         
         // Require to transfer money (15 units of token) before mint:
-        require(ERC20(token).transferFrom(msg.sender, address(this), 15), "Error: You need to pay 15 of Token to get the NFt");
+        require(ERC20(token).transferFrom(msg.sender, address(this), 15), "Error: You need to pay 15 of Token to get the NFT");
 
         uint256 tokenId = _tokenIdCounter.current();
        _tokenIdCounter.increment();
