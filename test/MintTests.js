@@ -1,6 +1,5 @@
-// const { assert, expect } = require("chai")
-const { ethers } = require("hardhat")
 
+const { expect } = require("chai")
 describe("HeroNFT", function () {
    
   let HeroNFT
@@ -46,12 +45,12 @@ describe("HeroNFT", function () {
       // Make sure minter has the transfered balance:
       let balanceOfMinter = await HeroERC20.balanceOf(minterAccount.getAddress()) 
       
-      await expect(balanceOfMinter).to.equal(tokensTransfered.toString())
+      expect(balanceOfMinter).to.equal(tokensTransfered.toString())
 
       // approve token expenditure
       await HeroERC20.approve(HeroNFT.address, hre.ethers.utils.parseEther("100"))
 
-      await expect(HeroNFT.safeMint(minterAccount.getAddress()).to.be.revertedWith("Error: You need to pay 15 of Token to get the NFT"))
+      expect(await HeroNFT.safeMint(minterAccount.getAddress())).to.be.revertedWith("Error: You need to pay 15 of Token to get the NFT")
     });
 
   });
