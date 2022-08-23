@@ -3,118 +3,162 @@ pragma solidity ^0.8.9;
 
 // Import this file to use console.log
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
+error AlreadyInitialized();
+error NeedMoreTokenToMint();
+error RangeOutOfBounds();
 
-contract HeroNFT is ERC721, ERC721Burnable, Ownable, VRFConsumerBaseV2 {
+contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     using Counters for Counters.Counter;
 
-    // ChainLink variables:
-    VRFCoordinatorV2Interface COORDINATOR;
+    // Types
+    enum HeroType {
+        DEFI_DEGEN,
+        ETHEREAN,
+        POLKA_AMAZON,
+        HODLER,
+        BITCOINER,
+        WHALE
+    }
+    
     // @notice the mumbai network chainlink vrf coordinator contract for generating random numbers:
     // https://docs.chain.link/docs/vrf-contracts/#polygon-matic-mainnet
-    address vrfCoordinator = 0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed;
+    //address vrfCoordinator = 0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed;
 
-    // keyHash is the gasLane to use on the request - specifies the max gas price to bump to
-    // docs: https://docs.chain.link/docs/chainlink-vrf/
-    bytes32 keyHash = 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f;
+    VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
+    uint64 private immutable i_subscriptionId;
+    bytes32 private immutable i_gasLane;
+    uint32 private immutable i_callbackGasLimit;
+    uint16 private constant REQUEST_CONFIRMATIONS = 3;
+    uint32 private constant NUM_WORDS = 1;
 
-    uint64 s_subscriptionId;
-
-    // We only store 2 values (each word cost 20000 gas, so 100000 is a safe limit)
-    uint32 callbackGasLimit = 100000;
+    // NFT Variables
+    Counters.Counter private _tokenIdCounter;
+    uint256 private immutable i_mintFee;    
+    uint256 internal constant MAX_CHANCE_VALUE = 100;
+    string[] internal s_herosTokenUris;
+    bool private s_initialized;
     
-    // We will retrieve 2 random values in one request:
-    // Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
-    uint32 numValues = 2;
-
-    // Stay with the default request confirmations of 3:
-    uint16 requestConfirmations = 3;
-    uint256[] public s_randomValues;
-    uint256 public s_requestId;
-
-    // Contract Variables:
     // @notice the relation between heroType and tokenID
-    mapping(uint256 => string) heroType;
+    mapping(uint256 => HeroType) private s_tokenIdToHero;
 
+    // @notice the mapping to match a user/address to a requestId from the VRF
+    mapping(uint256 => address) public s_requestIdToSender;
+
+    // Events
+    event NftRequested(uint256 indexed requestId, address requester);
+    event NftMinted(HeroType heroType, address minter);
+    
     // @notice the reference to the token that will be used as payment for minting
     address public token;
 
-    Counters.Counter private _tokenIdCounter;
-
-    constructor(string memory _H0,
-                string memory _H1,
-                string memory _H2,
-                string memory _H3,
-                string memory _H4,
-                address _token,
-                uint64 subscriptionId
-    ) ERC721("HeroNFT", "HRO") VRFConsumerBaseV2(vrfCoordinator) {
-        heroType[0] = _H0;
-        heroType[0] = _H1;
-        heroType[0] = _H2;
-        heroType[0] = _H3;
-        heroType[0] = _H4;
+    constructor(
+        address vrfCoordinatorV2,
+        uint64 subscriptionId,
+        bytes32 gasLane, // keyHash
+        uint256 mintFee,
+        uint32 callbackGasLimit,
+        string[6] memory heroTokenUris,
+        address _token 
+    ) ERC721("HeroNFT", "HRO") VRFConsumerBaseV2(vrfCoordinatorV2) {
+        i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
+        i_gasLane = gasLane;
+        i_subscriptionId = subscriptionId;
+        i_mintFee = mintFee;
+        i_callbackGasLimit = callbackGasLimit;
         token = _token;
-
-        COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
-        s_subscriptionId = subscriptionId;
+        _initializeContract(heroTokenUris);
     }
     
-    function tokenURI(uint256 tokenId)
-    public 
-    view
-    virtual
-    override
-    returns (string memory) {
-        require(_exists(tokenId), "erc721 URI doesn't exist for current TokenId");
-        //@notice is a WIP (for testing purposes only) - pointing to the json on pinata:
-        return "ipfs://QmPpRpHoC44yE4Jfby583k4HETA4xuCLaACz61sw8URibY";
-    }
-
-    function getTokenIdCounter() public virtual returns (uint256) {
-        return _tokenIdCounter.current();
-    }
-
-    function safeMint(address to) public onlyOwner {
-        
-        // Require to transfer money (15 units of token) before mint:
-        require(ERC20(token).transferFrom(msg.sender, address(this), 15), "Error: You need to pay 15 of Token to get the NFT");
-
-        uint256 tokenId = _tokenIdCounter.current();
-       _tokenIdCounter.increment();
-       _safeMint(to, tokenId);
+    function _initializeContract(string[6] memory heroTokenUris) private {
+        require(heroTokenUris.length == 6, "HeroTokenUris Not Correct Number, initalize with 6 hero types");
+        if (s_initialized) {
+            revert AlreadyInitialized();
+        }
+        s_herosTokenUris = heroTokenUris;
+        s_initialized = true;
     }
 
     /**
      @notice Assumes the subscription is funded sufficently. 
      Transaction will revert if subscription is not set and funded.
      */
-    function requestRandomWords() external onlyOwner {
-       s_requestId = COORDINATOR.requestRandomWords(
-           keyHash,
-           s_subscriptionId,
-           requestConfirmations,
-           callbackGasLimit,
-           numValues);
-    }
+    function requestNft() public payable returns (uint256 requestId) {
+        // if (msg.value < i_mintFee) {
+        //     revert NeedMoreTokenToMint();
+        // }
+        
+        // Require to transfer money (15 units of token) before mint:
+        require(ERC20(token).transferFrom(msg.sender, address(this), i_mintFee), "Error: You need to pay in the token to get the NFT");
 
-    /// @notice that this will update the state vars
-    function fulfillRandomWords(
-        uint256, /* requestId */
-        uint256[] memory randomValues)
-         internal 
-         override {
-            s_randomValues = randomValues;
+        requestId = i_vrfCoordinator.requestRandomWords(
+            i_gasLane,
+            i_subscriptionId,
+            REQUEST_CONFIRMATIONS,
+            i_callbackGasLimit,
+            NUM_WORDS
+        );
+
+        s_requestIdToSender[requestId] = msg.sender;
+        emit NftRequested(requestId, msg.sender);
+    }
+    
+    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
+        address heroOwner = s_requestIdToSender[requestId];
+        uint256 newItemId = _tokenIdCounter.current();
+       _tokenIdCounter.increment();
+        uint256 moddedRng = randomWords[0] % MAX_CHANCE_VALUE;
+        HeroType herotype = getHeroFromModdedRng(moddedRng);
+        _safeMint(heroOwner, newItemId);
+        _setTokenURI(newItemId, s_herosTokenUris[uint256(herotype)]);
+        emit NftMinted(herotype, heroOwner);
+    }
+    
+    function getHeroFromModdedRng(uint256 moddedRng) public pure returns (HeroType) {
+        uint256 cumulativeSum = 0;
+        uint256[6] memory chanceArray = getChanceArray();
+        for (uint256 i = 0; i < chanceArray.length; i++) {
+            // if (moddedRng >= cumulativeSum && moddedRng < cumulativeSum + chanceArray[i]) {
+            if (moddedRng >= cumulativeSum && moddedRng < chanceArray[i]) {
+                return HeroType(i);
+            }
+            // cumulativeSum = cumulativeSum + chanceArray[i];
+            cumulativeSum = chanceArray[i];
+        }
+        revert RangeOutOfBounds();
     }
 
     function withdrawToken(uint256 _amount) public onlyOwner {
         ERC20(token).transfer(msg.sender, _amount);
+    }
+
+    /**
+    @notice this method sets the chances of each index to happen when
+    requeting randomeness for the nft metadata generation 
+    */
+    function getChanceArray() public pure returns (uint256[6] memory) {
+        return [MAX_CHANCE_VALUE, 30, 50, 65, 10, 1];
+    }
+
+    function getMintFee() public view returns (uint256) {
+        return i_mintFee;
+    }
+
+    function getHeroTokenUris(uint256 index) public view returns (string memory) {
+        return s_herosTokenUris[index];
+    }
+
+    function getTokenIdCounter() public virtual returns (uint256) {
+        return _tokenIdCounter.current();
+    }
+    
+    function getInitialized() public view returns (bool) {
+        return s_initialized;
     }
 }

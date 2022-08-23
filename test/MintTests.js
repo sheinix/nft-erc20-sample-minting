@@ -1,5 +1,7 @@
 
-const { expect } = require("chai")
+const { assert, expect } = require("chai");
+const { ethers } = require("hardhat");
+
 describe("HeroNFT", function () {
    
   let HeroNFT
@@ -26,6 +28,9 @@ describe("HeroNFT", function () {
        HeroERC20.address,
        process.env.CHAINLINK_MUMBAI_SUBSCRIPTION_ID)
     await HeroNFT.deployed()
+
+    // Pre-approve the NFT to spend the ERC20
+    await HeroERC20.approve(HeroNFT.address, hre.ethers.utils.parseEther("900"))
   })
 
   describe("NFT Minting", function () {
@@ -48,8 +53,6 @@ describe("HeroNFT", function () {
       expect(balanceOfMinter).to.equal(tokensTransfered.toString())
 
       // approve token expenditure
-      await HeroERC20.approve(HeroNFT.address, hre.ethers.utils.parseEther("100"))
-
       expect(await HeroNFT.safeMint(minterAccount.getAddress())).to.be.revertedWith("Error: You need to pay 15 of Token to get the NFT")
     });
 
