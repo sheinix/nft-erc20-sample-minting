@@ -1,0 +1,33 @@
+{   
+   "description": "Whales are the crypto bourgeoisie that moves in the ocean of exchanges causing seismic movements in the markets. In constant warfare with the HODLERs of yesteryear, many of the whales hail from the fiat world, although others were HODLERs and BUIDLers in another past life.",
+   "external_url": "https://heroesonchain.com/heroes/crypto-whale/", 
+   "image": "ipfs://QmYvGNJeiGWBKdnZJinjbHW71V5DEZM24wBaguKXpVukeU",  
+   "name": "Crypto Whale",   
+   "attributes": [
+    	{ 
+    		"display_type": "boost_percentage",
+      	 	"trait_type": "Interoperability", 
+			"value": "20" 
+		},
+		{ 
+    	 	"display_type": "boost_percentage",
+       		"trait_type": "Pumpdamentals", 
+			"value": "95" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FOMO", 
+			"value": "55" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FUD", 
+			"value": "50" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "Community", 
+			"value": "40" 
+		}
+   ]
+}

@@ -2,6 +2,7 @@ const networkConfig = {
   default: {
     name: "hardhat",
     keepersUpdateInterval: "30",
+    verificationBlockConfirmations: 1,
   },
   31337: {
     name: "localhost",
@@ -11,6 +12,7 @@ const networkConfig = {
     keepersUpdateInterval: "30",
     raffleEntranceFee: "100000000000000000", // 0.1 ETH
     callbackGasLimit: "500000", // 500,000 gas
+    verificationBlockConfirmations: 1,
   },
   4: {
     name: "rinkeby",
@@ -21,10 +23,12 @@ const networkConfig = {
     raffleEntranceFee: "100000000000000000", // 0.1 ETH
     callbackGasLimit: "500000", // 500,000 gas
     vrfCoordinatorV2: "0x6168499c0cFfCaCD319c818142124B7A15E857ab",
+    verificationBlockConfirmations: 5,
   },
   1: {
     name: "mainnet",
     keepersUpdateInterval: "30",
+    verificationBlockConfirmations: 5,
   },
 
   // TODO: ADD MUMBAI NETWORK
@@ -32,13 +36,11 @@ const networkConfig = {
 
 const DECIMALS = "18";
 const INITIAL_PRICE = "200000000000000000000";
-const VERIFICATION_BLOCK_CONFIRMATIONS = 6;
 const developmentChains = ["hardhat", "localhost"];
 
 module.exports = {
   networkConfig,
   developmentChains,
-  VERIFICATION_BLOCK_CONFIRMATIONS,
   DECIMALS,
   INITIAL_PRICE,
 };

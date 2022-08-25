@@ -3,20 +3,20 @@ const {
   networkConfig,
   developmentChains,
   VERIFICATION_BLOCK_CONFIRMATIONS,
+  INITIAL_PRICE,
 } = require("../helper-hardhat-config");
 const { verify } = require("../utils/verify");
 const {
   storeImages,
   storeTokeUriMetadata,
+  storeJSONMetadataFilesInPinata,
 } = require("../utils/uploadToPinata");
 
 const FUND_AMOUNT = "1000000000000000000000";
 const imagesLocation = "./images/";
-let tokenUris = [
-  "ipfs://QmaVkBn2tKmjbhphU7eyztbvSQU5EXDdqRyXZtRhSGgJGo",
-  "ipfs://QmYQC5aGZu2PTH8XzbJrbDnvhj3gVs7ya33H9mqUNvST3d",
-  "ipfs://QmZYmH5iDbD6v3U2ixoVAjioSzvWJszDzYdbeCLquGSpVm",
-];
+const metadataLocation = "./nft-metadata/";
+
+let tokenUris = []; //Empty for final commit
 
 // Uploaded to Pinata:
 const imageUris = [
@@ -27,18 +27,6 @@ const imageUris = [
   "ipfs://QmbWfJ9GktLCETztV5L2qT4YcHusmqQ6MA4qi3zr4oQFTb",
   "ipfs://QmdwAqRVBkEVy6SQgF9kUBE3JFTeQGGJbU7EGZ5f5fz7em",
 ];
-
-const metadataTemplate = {
-  name: "",
-  description: "",
-  image: "",
-  attributes: [
-    {
-      trait_type: "Cuteness",
-      value: 100,
-    },
-  ],
-};
 
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy, log } = deployments;
@@ -56,7 +44,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   // ----> Deploy NFT Second:
   // Upload metadata to Pinata/IPFS first
   if (process.env.UPLOAD_TO_PINATA == "true") {
-    tokenUris = await handleTokenUris();
+    tokenUris = await storeJSONMetadataFilesInPinata(metadataLocation);
   }
 
   if (developmentChains.includes(network.name)) {
@@ -84,19 +72,20 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     vrfCoordinatorV2Address,
     subscriptionId,
     networkConfig[chainId]["gasLane"],
-    networkConfig[chainId]["mintFee"],
+    INITIAL_PRICE,
     networkConfig[chainId]["callbackGasLimit"],
     tokenUris,
     heroContract.address,
   ];
 
-  log(" Deploying Hero ERC20 Token...");
+  log(" Deploying Hero NFT Token...");
 
   const heroNFT = await deploy("HeroNFT", {
     from: deployer,
     args: arguments,
     log: true,
-    waitConfirmations: VERIFICATION_BLOCK_CONFIRMATIONS || 1,
+    waitConfirmations:
+      networkConfig[chainId]["verificationBlockConfirmations"] || 1,
   });
 
   // Verify the deployment
@@ -108,24 +97,4 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     await verify(heroNFT.address, arguments);
   }
 };
-
-async function handleTokenUris() {
-  tokenUris = [];
-  const { responses: imageUploadResponses, files } = await storeImages(
-    imagesLocation
-  );
-  for (imageUploadResponseIndex in imageUploadResponses) {
-    let tokenUriMetadata = { ...metadataTemplate };
-    tokenUriMetadata.name = files[imageUploadResponseIndex].replace(".png", "");
-    tokenUriMetadata.description = `An adorable ${tokenUriMetadata.name} pup!`;
-    tokenUriMetadata.image = `ipfs://${imageUploadResponses[imageUploadResponseIndex].IpfsHash}`;
-    console.log(`Uploading ${tokenUriMetadata.name}...`);
-    const metadataUploadResponse = await storeTokeUriMetadata(tokenUriMetadata);
-    tokenUris.push(`ipfs://${metadataUploadResponse.IpfsHash}`);
-  }
-  console.log("Token URIs uploaded! They are:");
-  console.log(tokenUris);
-  return tokenUris;
-}
-
 module.exports.tags = ["all", "randomipfs", "main"];

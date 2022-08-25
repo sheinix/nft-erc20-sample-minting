@@ -1,0 +1,33 @@
+{   
+   "description": "Polka-amazonian warriors hodl DOT and brandish the banners of interconnectivity. Their strength lies in the union and communication of the different Parachains tribes. They are young folk with promising futures.",
+   "external_url": "https://heroesonchain.com/heroes/polka-amazon/", 
+   "image": "ipfs://QmXwZDhj5tyUwwtEi5YEBnHrJRt4ktpnSG4pfPkU4WyXqK",  
+   "name": "Polka Amazon",   
+   "attributes": [
+    	{ 
+    		"display_type": "boost_percentage",
+      	 	"trait_type": "Interoperability", 
+			"value": "100" 
+		},
+		{ 
+    	 	"display_type": "boost_percentage",
+       		"trait_type": "Pumpdamentals", 
+			"value": "60" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FOMO", 
+			"value": "20" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FUD", 
+			"value": "10" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "Community", 
+			"value": "70" 
+		}
+   ]
+}

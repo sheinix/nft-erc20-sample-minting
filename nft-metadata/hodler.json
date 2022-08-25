@@ -1,0 +1,33 @@
+{   
+   "description": "The HODLERs are beings of yesteryear originated in the genesis block. They carry the willpower to withstand any onslaught of the market, they have faced both bears and bulls in their long life with their bare diamond hands.",
+   "external_url": "https://heroesonchain.com/heroes/hodler/", 
+   "image": "ipfs://QmR4RTmDqqpbihPJUNA8S8cHpFkg9ziTPscAKoHwPfeY4j",  
+   "name": "Hodler",   
+   "attributes": [
+    	{ 
+    		"display_type": "boost_percentage",
+      	 	"trait_type": "Interoperability", 
+			"value": "20" 
+		},
+		{ 
+    	 	"display_type": "boost_percentage",
+       		"trait_type": "Pumpdamentals", 
+			"value": "60" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FOMO", 
+			"value": "20" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FUD", 
+			"value": "0" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "Community", 
+			"value": "50" 
+		}
+   ]
+}

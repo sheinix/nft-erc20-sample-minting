@@ -1,0 +1,33 @@
+{   
+   "description": "The Bitcoiner who ventures into the Etherean lands is an extremely rare being. A proper Bitcoiner stacks sats and preaches Nakamoto’s word. Always keeps the BTC Whitepaper to repel heretics who enact Proof of Stake instead of Proof of Work.",
+   "external_url": "https://heroesonchain.com/heroes/bitcoiner/", 
+   "image": "ipfs://QmQWz53QoqEyKoHMrDJYHChm4vt7Y3vfiyHPy8sMogUHkg",  
+   "name": "Bitcoiner",   
+   "attributes": [
+    	{ 
+    		"display_type": "boost_percentage",
+      	 	"trait_type": "Interoperability", 
+			"value": "10" 
+		},
+		{ 
+    	 	"display_type": "boost_percentage",
+       		"trait_type": "Pumpdamentals", 
+			"value": "100" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FOMO", 
+			"value": "80" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "FUD", 
+			"value": "70" 
+		},
+		{ 
+    		"display_type": "boost_percentage",
+       		"trait_type": "Community", 
+			"value": "20" 
+		}
+   ]
+}

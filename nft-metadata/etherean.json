@@ -1,33 +1,33 @@
 {   
-   "description": "Booming species despite its problems to expand. The Etherean people were the first settlers in the DeFi jungle. They ride magic unicorns and together with their leader Vitalik, they lead the fight against centralization and ASIC mining by migrating to the promised lands of Proof of Stake",      
+   "description": "Booming species despite its problems to expand. The Etherean people were the first settlers in the DeFi jungle. They ride magic unicorns and adventure to the dark forest. The promised land for Ethereans is the Proof of Stake lands",
    "external_url": "https://heroesonchain.com/heroes/etherean/", 
-   "image": "https://opensea-prod.appspot.com/puffs/3.png",  
+   "image": "ipfs://QmY2J2KBCEF1CdaWg6MZzjatmaERHevgDH5T4iEMnAW3EC",  
    "name": "Etherean",   
    "attributes": [
     	{ 
     		"display_type": "boost_percentage",
-       	"trait_type": "Interoperability", 
-			  "value": "90" 
+      	 	"trait_type": "Interoperability", 
+			"value": "90" 
 		},
 		{ 
-    	 "display_type": "boost_percentage",
-       "trait_type": "Pumpdamentals", 
-			 "value": "70" 
+    	 	"display_type": "boost_percentage",
+       		"trait_type": "Pumpdamentals", 
+			"value": "70" 
 		},
 		{ 
     		"display_type": "boost_percentage",
-       	"trait_type": "FOMO", 
-			  "value": "80" 
+       		"trait_type": "FOMO", 
+			"value": "80" 
 		},
 		{ 
     		"display_type": "boost_percentage",
        		"trait_type": "FUD", 
-			   "value": "20" 
+			"value": "20" 
 		},
 		{ 
     		"display_type": "boost_percentage",
        		"trait_type": "Community", 
-			 "value": "90" 
+			"value": "90" 
 		}
    ]
 }
