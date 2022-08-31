@@ -28,32 +28,44 @@ const imageUris = [
   "ipfs://QmdwAqRVBkEVy6SQgF9kUBE3JFTeQGGJbU7EGZ5f5fz7em",
 ];
 
-module.exports = async function ({ getNamedAccounts, deployments }) {
+module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy, log } = deployments;
   const { deployer } = await getNamedAccounts();
   const chainId = network.config.chainId;
-  let vrfCoordinatorV2Address, subscriptionId;
+  let vrfCoordinatorV2Mock, vrfCoordinatorV2Address, subscriptionId;
 
   // ---> Deploy Hero Token ERC20 First:
   log(" Deploying Hero ERC20 Token...");
 
-  const HeroToken = await hre.ethers.getContractFactory("HeroToken");
-  const heroContract = await HeroToken.deploy();
-  await heroContract.deployed();
+  const HeroToken = await deploy("HeroToken", {
+    from: deployer,
+    args: [],
+    log: true,
+    waitConfirmations:
+      networkConfig[chainId]["verificationBlockConfirmations"] || 1,
+  });
 
   // ----> Deploy NFT Second:
   // Upload metadata to Pinata/IPFS first
   if (process.env.UPLOAD_TO_PINATA == "true") {
     tokenUris = await storeJSONMetadataFilesInPinata(metadataLocation);
+  } else {
+    // Hardcode already uploaded metadata for tests:
+    tokenUris = [
+      "ipfs://Qmd1dezwffba6g9HqNdG4vkvfB4K1LmBbEo5ps6Gd7ZfQ5",
+      "ipfs://QmYJo632oAwxqwTWMW2VavAo2gBfwv6FNq2Bgxxa861kCU",
+      "ipfs://QmdQHDGrpXaXLTD1jGVu1yq9MGocN6ZAM34qRMiQ22X8Jb",
+      "ipfs://QmfJhGe2LB8LNVSpfJrSrwkT7hULea3Qg7A3FeZrfKKGqz",
+      "ipfs://QmUVW7z8tds8NChiebD17DXhJW7w8oBxhxNtca9ac2PAxZ",
+      "ipfs://QmbFeqUaQQdff7NvCALG5HXTtMj5Je9Cdb5X24m2nMftHD",
+    ];
   }
 
   if (developmentChains.includes(network.name)) {
     log(" Deploying VRF Contracts in local environment...");
 
     // create VRFV2 Subscription
-    const vrfCoordinatorV2Mock = await ethers.getContract(
-      "VRFCoordinatorV2Mock"
-    );
+    vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock");
     vrfCoordinatorV2Address = vrfCoordinatorV2Mock.address;
     const transactionResponse = await vrfCoordinatorV2Mock.createSubscription();
     const transactionReceipt = await transactionResponse.wait();
@@ -75,7 +87,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     INITIAL_PRICE,
     networkConfig[chainId]["callbackGasLimit"],
     tokenUris,
-    heroContract.address,
+    HeroToken.address,
   ];
 
   log(" Deploying Hero NFT Token...");
@@ -88,6 +100,12 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
       networkConfig[chainId]["verificationBlockConfirmations"] || 1,
   });
 
+  // Make sure we add the contract as consumer to the vrfCoordinator on development:
+  if (developmentChains.includes(network.name)) {
+    log(" Adding Hero NFT Contract as VRF Consumer...");
+    await vrfCoordinatorV2Mock.addConsumer(subscriptionId, heroNFT.address);
+  }
+
   // Verify the deployment
   if (
     !developmentChains.includes(network.name) &&
@@ -97,4 +115,4 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     await verify(heroNFT.address, arguments);
   }
 };
-module.exports.tags = ["all", "randomipfs", "main"];
+module.exports.tags = ["all", "erc20NFTDeploy", "main"];

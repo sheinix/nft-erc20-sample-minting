@@ -1,3 +1,5 @@
+const { ethers } = require("hardhat");
+
 const networkConfig = {
   default: {
     name: "hardhat",
@@ -35,7 +37,7 @@ const networkConfig = {
 };
 
 const DECIMALS = "18";
-const INITIAL_PRICE = "200000000000000000000";
+const INITIAL_PRICE = hre.ethers.utils.parseEther("15");
 const developmentChains = ["hardhat", "localhost"];
 
 module.exports = {
