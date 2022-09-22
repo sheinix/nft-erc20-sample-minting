@@ -90,11 +90,8 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
      Transaction will revert if subscription is not set and funded.
      */
     function requestNft() public payable returns (uint256 requestId) {
-        // if (msg.value < i_mintFee) {
-        //     revert NeedMoreTokenToMint();
-        // }
-        
-        // Require to transfer money (15 units of token) before mint:
+      
+        // Require to transfer money (i_mintFee units of token) before mint:
         require(ERC20(token).transferFrom(msg.sender, address(this), i_mintFee), "Error: You need to pay in the token to get the NFT");
 
         requestId = i_vrfCoordinator.requestRandomWords(
