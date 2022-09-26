@@ -38,16 +38,15 @@ const {
         await heroERC20
           .connect(minterAccount)
           .approve(heroNFT.address, hre.ethers.utils.parseEther("900"));
+      });
 
-        // Random Mock Token URIs:
-        randomMockTokenUris = [
-          "TokenURI_1",
-          "TokenURI_2",
-          "TokenURI_3",
-          "TokenURI_4",
-          "TokenURI_5",
-          "TokenURI_6",
-        ];
+      describe("constructor", () => {
+        it("sets starting values correctly", async function () {
+          const heroTokenUriZero = await heroNFT.getHeroTokenUris(0);
+          const isInitialized = await heroNFT.getInitialized();
+          assert(heroTokenUriZero.includes("ipfs://"));
+          assert.equal(isInitialized, true);
+        });
       });
 
       // Test Minting:
@@ -70,7 +69,7 @@ const {
           );
 
           expect(balanceOfMinter).to.equal(tokensTransfered.toString());
-          
+
           await expect(
             heroNFT.connect(minterAccount).requestNft()
           ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
@@ -80,15 +79,78 @@ const {
           const fee = await heroNFT.getMintFee();
           await expect(heroNFT.requestNft()).to.emit(heroNFT, "NftRequested");
         });
+      });
 
-        // TODO: Fix this test:
-        // it("Should reject initalizing contract after initial instantiation", async function () {
-        //   await expect(
-        //     deployments.fixture(["mocks", "erc20NFTDeploy"])
-        //   ).to.be.revertedWith("AlreadyInitialized");
-        // });
-      });    
-    }   
-// test fullfill random words
-// test getHeroFromModdedRng out of range
-// test withdraw token only owner
+      describe("fullfillRandomWors", () => {
+        it("mints NFT after random number is returned", async function () {
+          await new Promise(async (resolve, reject) => {
+            heroNFT.once("NftMinted", async () => {
+              try {
+                const tokenUri = await heroNFT.tokenURI("0");
+                const tokenCounter = await heroNFT.getTokenCounter();
+                assert.equal(tokenUri.toString().includes("ipfs://"), true);
+                assert.equal(tokenCounter.toString(), "1");
+                resolve();
+              } catch (e) {
+                console.log(e);
+                reject(e);
+              }
+            });
+            try {
+              const fee = await heroNFT.getMintFee();
+              const requestNftResponse = await heroNFT
+                .connect(deployer)
+                .requestNft();
+              // const requestNftResponse = await heroNFT.requestNft();
+              const requestNftReceipt = await requestNftResponse.wait(1);
+              await vrfCoordinatorV2Mock.fulfillRandomWords(
+                requestNftReceipt.events[1].args.requestId,
+                heroNFT.address
+              );
+            } catch (e) {
+              console.log(e);
+              reject(e);
+            }
+          });
+        });
+      });
+
+      describe("getHeroFromModdedRng", () => {
+        // (0) WHALE, 0-2
+        // (1) BITCOINER -> 2-10
+        // (2) DEFI_DEGEN -> 10-25
+        // (3) POLKA_AMAZON -> 25-50
+        // (4) ETHEREAN -> 50 - 70
+        // (5) HODLER -> >70 - 99
+
+        it("should return WHALE if moddedRng < 2", async function () {
+          const expectedValue = await heroNFT.getHeroFromModdedRng(1);
+          assert.equal(0, expectedValue);
+        });
+        it("should return BITCOINER if moddedRng is between 2 - 10", async function () {
+          const expectedValue = await heroNFT.getHeroFromModdedRng(5);
+          assert.equal(1, expectedValue);
+        });
+        it("should return DEFI_DEGEN if moddedRng is between 10 - 25", async function () {
+          const expectedValue = await heroNFT.getHeroFromModdedRng(22);
+          assert.equal(2, expectedValue);
+        });
+        it("should return POLKA_AMAZON if moddedRng is between 25 - 50", async function () {
+          const expectedValue = await heroNFT.getHeroFromModdedRng(49);
+          assert.equal(3, expectedValue);
+        });
+        it("should return ETHEREAN if moddedRng is between 50 - 70", async function () {
+          const expectedValue = await heroNFT.getHeroFromModdedRng(61);
+          assert.equal(4, expectedValue);
+        });
+        it("should return HODLER if moddedRng is between 70 - 99", async function () {
+          const expectedValue = await heroNFT.getHeroFromModdedRng(90);
+          assert.equal(5, expectedValue);
+        });
+        it("should revert if moddedRng > 99", async function () {
+          await expect(heroNFT.getHeroFromModdedRng(100)).to.be.revertedWith(
+            "RangeOutOfBounds"
+          );
+        });
+      });
+    });

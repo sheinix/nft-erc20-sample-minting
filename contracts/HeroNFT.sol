@@ -19,12 +19,12 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
 
     // Types
     enum HeroType {
-        DEFI_DEGEN,
-        ETHEREAN,
-        POLKA_AMAZON,
-        HODLER,
+        WHALE,
         BITCOINER,
-        WHALE
+        DEFI_DEGEN,
+        POLKA_AMAZON,
+        ETHEREAN,
+        HODLER
     }
     
     // @notice the mumbai network chainlink vrf coordinator contract for generating random numbers:
@@ -140,7 +140,7 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     requeting randomeness for the nft metadata generation 
     */
     function getChanceArray() public pure returns (uint256[6] memory) {
-        return [MAX_CHANCE_VALUE, 30, 50, 65, 10, 1];
+        return [2, 10, 25, 50, 70, MAX_CHANCE_VALUE];
     }
 
     function getMintFee() public view returns (uint256) {
