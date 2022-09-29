@@ -4,11 +4,10 @@ require("@nomiclabs/hardhat-etherscan");
 require("dotenv").config();
 require("solidity-coverage");
 require("hardhat-deploy");
-// require("dotenv").config({path: __dirname + '/.env'});
-// require('@openzeppelin/hardhat-upgrades');
 
-const RINKEBY_RPC_URL = process.env.RINKEBY_RPC_URL;
-
+const GOERLI_RPC_URL = process.env.GOERLI_RPC_URL;
+const privateKey =
+  process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [];
 module.exports = {
   defaultNetwork: "hardhat",
   networks: {
@@ -22,30 +21,21 @@ module.exports = {
     localhost: {
       chainId: 31337,
     },
-    rinkeby: {
-      url: RINKEBY_RPC_URL,
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-      //   accounts: {
-      //     mnemonic: MNEMONIC,
-      //   },
+    goerli: {
+      url: GOERLI_RPC_URL,
+      accounts: privateKey,
       saveDeployments: true,
-      chainId: 4,
+      chainId: 5,
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL,
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-      //   accounts: {
-      //     mnemonic: MNEMONIC,
-      //   },
+      accounts: privateKey,
       saveDeployments: true,
       chainId: 1,
     },
     polygon: {
       url: process.env.POLYGON_MAINNET_RPC_URL,
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      accounts: privateKey,
       saveDeployments: true,
       chainId: 137,
     },
@@ -53,8 +43,7 @@ module.exports = {
   etherscan: {
     // yarn hardhat verify --network <NETWORK> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
     apiKey: {
-      rinkeby: process.env.ETHERSCAN_API_KEY,
-      kovan: process.env.ETHERSCAN_API_KEY,
+      goerli: process.env.ETHERSCAN_API_KEY,
       polygon: process.env.POLYGONSCAN_API_KEY,
     },
   },

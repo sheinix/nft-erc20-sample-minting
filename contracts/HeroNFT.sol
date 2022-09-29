@@ -151,7 +151,7 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
         return s_herosTokenUris[index];
     }
 
-    function getTokenIdCounter() public virtual returns (uint256) {
+    function getTokenIdCounter() public view returns (uint256) {
         return _tokenIdCounter.current();
     }
     

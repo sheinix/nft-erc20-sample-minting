@@ -81,14 +81,17 @@ const {
         });
       });
 
-      describe("fullfillRandomWors", () => {
+      describe("fullfillRandomWords", () => {
         it("mints NFT after random number is returned", async function () {
           await new Promise(async (resolve, reject) => {
             heroNFT.once("NftMinted", async () => {
               try {
                 const tokenUri = await heroNFT.tokenURI("0");
-                const tokenCounter = await heroNFT.getTokenCounter();
+                const tokenCounter = await heroNFT.getTokenIdCounter();
                 assert.equal(tokenUri.toString().includes("ipfs://"), true);
+
+                console.log(`Token Counter is ${tokenCounter}`);
+
                 assert.equal(tokenCounter.toString(), "1");
                 resolve();
               } catch (e) {
@@ -101,10 +104,15 @@ const {
               const requestNftResponse = await heroNFT
                 .connect(deployer)
                 .requestNft();
-              // const requestNftResponse = await heroNFT.requestNft();
               const requestNftReceipt = await requestNftResponse.wait(1);
+              const nftRequestedEvent = requestNftReceipt.events.find(
+                (event) => event.event == "NftRequested"
+              );
+
+              const [requestId] = nftRequestedEvent.args;
+
               await vrfCoordinatorV2Mock.fulfillRandomWords(
-                requestNftReceipt.events[1].args.requestId,
+                requestId,
                 heroNFT.address
               );
             } catch (e) {

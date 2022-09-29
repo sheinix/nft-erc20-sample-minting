@@ -111,7 +111,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     !developmentChains.includes(network.name) &&
     process.env.ETHERSCAN_API_KEY
   ) {
-    log("Verifying...");
+    log("Verifying ERC20...");
+    await verify(HeroToken.address, []);
+
+    log("Verifying NFT Contract...");
     await verify(heroNFT.address, arguments);
   }
 };
