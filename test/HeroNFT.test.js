@@ -71,13 +71,15 @@ const {
           expect(balanceOfMinter).to.equal(tokensTransfered.toString());
 
           await expect(
-            heroNFT.connect(minterAccount).requestNft()
-          ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
+            heroNFT.connect(minterAccount).requestNft(tokensTransfered)
+          ).to.be.revertedWith("NeedMoreTokenToMint()");
         });
 
         it("emits an event and kicks off a random word request", async function () {
           const fee = await heroNFT.getMintFee();
-          await expect(heroNFT.requestNft()).to.emit(heroNFT, "NftRequested");
+          await expect(
+            heroNFT.requestNft(hre.ethers.utils.parseEther("80"))
+          ).to.emit(heroNFT, "NftRequested");
         });
       });
 
@@ -103,7 +105,7 @@ const {
               const fee = await heroNFT.getMintFee();
               const requestNftResponse = await heroNFT
                 .connect(deployer)
-                .requestNft();
+                .requestNft(hre.ethers.utils.parseEther("90"));
               const requestNftReceipt = await requestNftResponse.wait(1);
               const nftRequestedEvent = requestNftReceipt.events.find(
                 (event) => event.event == "NftRequested"

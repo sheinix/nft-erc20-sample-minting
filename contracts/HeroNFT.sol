@@ -6,7 +6,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
@@ -89,10 +89,13 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
      @notice Assumes the subscription is funded sufficently. 
      Transaction will revert if subscription is not set and funded.
      */
-    function requestNft() public payable returns (uint256 requestId) {
-      
+    function requestNft(uint256 tokenAmount) public payable returns (uint256 requestId) {
+        if(tokenAmount < i_mintFee) {
+            revert NeedMoreTokenToMint();
+        }
+        
         // Require to transfer money (i_mintFee units of token) before mint:
-        require(ERC20(token).transferFrom(msg.sender, address(this), i_mintFee), "Error: You need to pay in the token to get the NFT");
+        require(IERC20(token).transferFrom(msg.sender, address(this), i_mintFee), "Error: You need to pay in the token to get the NFT");
 
         requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
@@ -132,7 +135,7 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     }
 
     function withdrawToken(uint256 _amount) public onlyOwner {
-        ERC20(token).transfer(msg.sender, _amount);
+       IERC20(token).transfer(msg.sender, _amount);
     }
 
     /**
