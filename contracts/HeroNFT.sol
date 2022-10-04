@@ -89,7 +89,7 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
      @notice Assumes the subscription is funded sufficently. 
      Transaction will revert if subscription is not set and funded.
      */
-    function requestNft(uint256 tokenAmount) public payable returns (uint256 requestId) {
+    function requestNft(uint256 tokenAmount) public returns (uint256 requestId) {
         if(tokenAmount < i_mintFee) {
             revert NeedMoreTokenToMint();
         }
@@ -137,7 +137,6 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     function withdrawToken(uint256 _amount) public onlyOwner {
        IERC20(token).transfer(msg.sender, _amount);
     }
-
     /**
     @notice this method sets the chances of each index to happen when
     requeting randomeness for the nft metadata generation 
