@@ -1,6 +1,13 @@
-# Sample NFT Minting with Specific ERC20 Token
+# Heroes On Chain 🦸🏻‍♂️
 
-This project demonstrates a basic NFT creation with a random number generator and the ability to only mint with a specific ERC20 Token.
+### NFT Minting with Specific ERC20 Token
+
+#### This project demonstrates:
+
+- NFT creation with a random on-chain number generator from ChainLink VRF 🔗 (HeroNFT)
+- NFT Metadata Storage in Pinata 🪅
+- Deploy of ERC20 to Pay for the NFT 💸 (HeroToken)
+- To mint NFT is only possible by paying with the ERC20 deployed (HeroToken)
 
 The project is setup with HardHat:
 Try running some of the following tasks:
