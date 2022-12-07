@@ -10,7 +10,7 @@ const {
   : describe("HeroNFT Tests", function () {
       let heroNFT;
       let heroERC20;
-      let priceOfMint = 15;
+      let priceOfMint = hre.ethers.utils.parseEther("15");
       let minterAccount;
 
       beforeEach(async function () {
@@ -122,6 +122,41 @@ const {
               reject(e);
             }
           });
+        });
+      });
+
+      describe("updateMinting Price Of Mint", () => {
+        it("should revert if trying to update with other than owner", async function () {
+          let newPrice = hre.ethers.utils.parseEther("1");
+
+          await expect(
+            heroNFT.connect(minterAccount).updateMintPrice(newPrice)
+          ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
+        it("should revert if trying to update with zero", async function () {
+          let newPrice = hre.ethers.utils.parseEther("0");
+
+          await expect(heroNFT.updateMintPrice(newPrice)).to.be.revertedWith(
+            "InvalidNewMintPrice()"
+          );
+        });
+
+        it("should revert if trying to update with same mint price", async function () {
+          let invalidPrice = await heroNFT.getMintFee();
+
+          await expect(
+            heroNFT.updateMintPrice(invalidPrice)
+          ).to.be.revertedWith("InvalidNewMintPrice()");
+        });
+
+        it("should update mintin price correctly", async function () {
+          let newPrice = hre.ethers.utils.parseEther("1");
+
+          await heroNFT.updateMintPrice(newPrice);
+          let updatedPrice = await heroNFT.getMintFee();
+
+          assert.equal(updatedPrice.toString(), newPrice.toString());
         });
       });
 
