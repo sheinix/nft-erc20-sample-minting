@@ -13,6 +13,7 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 error AlreadyInitialized();
 error NeedMoreTokenToMint();
 error RangeOutOfBounds();
+error InvalidNewMintPrice();
 
 contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     using Counters for Counters.Counter;
@@ -26,7 +27,7 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
         ETHEREAN,
         HODLER
     }
-    
+
     // @notice the mumbai network chainlink vrf coordinator contract for generating random numbers:
     // https://docs.chain.link/docs/vrf-contracts/#polygon-matic-mainnet
     //address vrfCoordinator = 0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed;
@@ -40,11 +41,11 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
 
     // NFT Variables
     Counters.Counter private _tokenIdCounter;
-    uint256 private immutable i_mintFee;    
+    uint256 private mintFee;
     uint256 internal constant MAX_CHANCE_VALUE = 100;
     string[] internal s_herosTokenUris;
     bool private s_initialized;
-    
+
     // @notice the relation between heroType and tokenID
     mapping(uint256 => HeroType) private s_tokenIdToHero;
 
@@ -54,7 +55,7 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     // Events
     event NftRequested(uint256 indexed requestId, address requester);
     event NftMinted(HeroType heroType, address minter);
-    
+
     // @notice the reference to the token that will be used as payment for minting
     address public token;
 
@@ -62,22 +63,32 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
         address vrfCoordinatorV2,
         uint64 subscriptionId,
         bytes32 gasLane, // keyHash
-        uint256 mintFee,
+        uint256 mintPrice,
         uint32 callbackGasLimit,
         string[6] memory heroTokenUris,
-        address _token 
+        address _token
     ) ERC721("HeroNFT", "HRO") VRFConsumerBaseV2(vrfCoordinatorV2) {
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
-        i_mintFee = mintFee;
+        mintFee = mintPrice;
         i_callbackGasLimit = callbackGasLimit;
         token = _token;
         _initializeContract(heroTokenUris);
     }
-    
+
+    modifier validMintPrice(uint256 newMintPrice) {
+        if (newMintPrice <= 0 || newMintPrice == mintFee) {
+            revert InvalidNewMintPrice();
+        }
+        _;
+    }
+
     function _initializeContract(string[6] memory heroTokenUris) private {
-        require(heroTokenUris.length == 6, "HeroTokenUris Not Correct Number, initalize with 6 hero types");
+        require(
+            heroTokenUris.length == 6,
+            "HeroTokenUris Not Correct Number, initalize with 6 hero types"
+        );
         if (s_initialized) {
             revert AlreadyInitialized();
         }
@@ -89,13 +100,18 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
      @notice Assumes the subscription is funded sufficently. 
      Transaction will revert if subscription is not set and funded.
      */
-    function requestNft(uint256 tokenAmount) public returns (uint256 requestId) {
-        if(tokenAmount < i_mintFee) {
+    function requestNft(
+        uint256 tokenAmount
+    ) public returns (uint256 requestId) {
+        if (tokenAmount < mintFee) {
             revert NeedMoreTokenToMint();
         }
-        
+
         // Require to transfer money (i_mintFee units of token) before mint:
-        require(IERC20(token).transferFrom(msg.sender, address(this), i_mintFee), "Error: You need to pay in the token to get the NFT");
+        require(
+            IERC20(token).transferFrom(msg.sender, address(this), mintFee),
+            "Error: You need to pay in the token to get the NFT"
+        );
 
         requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
@@ -108,19 +124,24 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
         s_requestIdToSender[requestId] = msg.sender;
         emit NftRequested(requestId, msg.sender);
     }
-    
-    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
+
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal override {
         address heroOwner = s_requestIdToSender[requestId];
         uint256 newItemId = _tokenIdCounter.current();
-       _tokenIdCounter.increment();
+        _tokenIdCounter.increment();
         uint256 moddedRng = randomWords[0] % MAX_CHANCE_VALUE;
         HeroType herotype = getHeroFromModdedRng(moddedRng);
         _safeMint(heroOwner, newItemId);
         _setTokenURI(newItemId, s_herosTokenUris[uint256(herotype)]);
         emit NftMinted(herotype, heroOwner);
     }
-    
-    function getHeroFromModdedRng(uint256 moddedRng) public pure returns (HeroType) {
+
+    function getHeroFromModdedRng(
+        uint256 moddedRng
+    ) public pure returns (HeroType) {
         uint256 cumulativeSum = 0;
         uint256[6] memory chanceArray = getChanceArray();
         for (uint256 i = 0; i < chanceArray.length; i++) {
@@ -135,8 +156,15 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     }
 
     function withdrawToken(uint256 _amount) public onlyOwner {
-       IERC20(token).transfer(msg.sender, _amount);
+        IERC20(token).transfer(msg.sender, _amount);
     }
+
+    function updateMintPrice(
+        uint256 newMintPrice
+    ) public onlyOwner validMintPrice(newMintPrice) {
+        mintFee = newMintPrice;
+    }
+
     /**
     @notice this method sets the chances of each index to happen when
     requeting randomeness for the nft metadata generation 
@@ -146,17 +174,19 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     }
 
     function getMintFee() public view returns (uint256) {
-        return i_mintFee;
+        return mintFee;
     }
 
-    function getHeroTokenUris(uint256 index) public view returns (string memory) {
+    function getHeroTokenUris(
+        uint256 index
+    ) public view returns (string memory) {
         return s_herosTokenUris[index];
     }
 
     function getTokenIdCounter() public view returns (uint256) {
         return _tokenIdCounter.current();
     }
-    
+
     function getInitialized() public view returns (bool) {
         return s_initialized;
     }
