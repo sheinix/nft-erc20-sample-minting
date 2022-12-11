@@ -34,18 +34,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const chainId = network.config.chainId;
   let vrfCoordinatorV2Mock, vrfCoordinatorV2Address, subscriptionId;
 
-  // ---> Deploy Hero Token ERC20 First:
-  log(" Deploying Hero ERC20 Token...");
-
-  const HeroToken = await deploy("HeroToken", {
-    from: deployer,
-    args: [],
-    log: true,
-    waitConfirmations:
-      networkConfig[chainId]["verificationBlockConfirmations"] || 1,
-  });
-
-  // ----> Deploy NFT Second:
   // Upload metadata to Pinata/IPFS first
   if (process.env.UPLOAD_TO_PINATA == "true") {
     tokenUris = await storeJSONMetadataFilesInPinata(metadataLocation);
@@ -87,7 +75,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     INITIAL_PRICE,
     networkConfig[chainId]["callbackGasLimit"],
     tokenUris,
-    HeroToken.address,
   ];
 
   log(" Deploying Hero NFT Token...");
@@ -111,11 +98,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     !developmentChains.includes(network.name) &&
     process.env.ETHERSCAN_API_KEY
   ) {
-    log("Verifying ERC20...");
-    await verify(HeroToken.address, []);
-
     log("Verifying NFT Contract...");
     await verify(heroNFT.address, arguments);
   }
 };
-module.exports.tags = ["all", "erc20NFTDeploy", "main"];
+module.exports.tags = ["all", "nftDeploy", "main"];

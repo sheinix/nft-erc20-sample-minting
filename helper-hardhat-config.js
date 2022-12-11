@@ -40,7 +40,7 @@ const networkConfig = {
 };
 
 const DECIMALS = "18";
-const INITIAL_PRICE = hre.ethers.utils.parseEther("15");
+const INITIAL_PRICE = hre.ethers.utils.parseEther("1");
 const developmentChains = ["hardhat", "localhost"];
 
 module.exports = {

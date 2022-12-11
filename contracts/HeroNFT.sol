@@ -6,7 +6,6 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
@@ -56,24 +55,19 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
     event NftRequested(uint256 indexed requestId, address requester);
     event NftMinted(HeroType heroType, address minter);
 
-    // @notice the reference to the token that will be used as payment for minting
-    address public token;
-
     constructor(
         address vrfCoordinatorV2,
         uint64 subscriptionId,
         bytes32 gasLane, // keyHash
         uint256 mintPrice,
         uint32 callbackGasLimit,
-        string[6] memory heroTokenUris,
-        address _token
+        string[6] memory heroTokenUris
     ) ERC721("HeroNFT", "HRO") VRFConsumerBaseV2(vrfCoordinatorV2) {
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         mintFee = mintPrice;
         i_callbackGasLimit = callbackGasLimit;
-        token = _token;
         _initializeContract(heroTokenUris);
     }
 
@@ -100,18 +94,10 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
      @notice Assumes the subscription is funded sufficently. 
      Transaction will revert if subscription is not set and funded.
      */
-    function requestNft(
-        uint256 tokenAmount
-    ) public returns (uint256 requestId) {
-        if (tokenAmount < mintFee) {
+    function requestNft() public payable returns (uint256 requestId) {
+        if (msg.value < mintFee) {
             revert NeedMoreTokenToMint();
         }
-
-        // Require to transfer money (i_mintFee units of token) before mint:
-        require(
-            IERC20(token).transferFrom(msg.sender, address(this), mintFee),
-            "Error: You need to pay in the token to get the NFT"
-        );
 
         requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
@@ -155,8 +141,9 @@ contract HeroNFT is ERC721URIStorage, Ownable, VRFConsumerBaseV2 {
         revert RangeOutOfBounds();
     }
 
-    function withdrawToken(uint256 _amount) public onlyOwner {
-        IERC20(token).transfer(msg.sender, _amount);
+    function withdraw() public onlyOwner {
+        uint256 balance = address(this).balance;
+        payable(msg.sender).transfer(balance);
     }
 
     function updateMintPrice(

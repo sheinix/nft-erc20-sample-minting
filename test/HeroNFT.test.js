@@ -3,13 +3,13 @@ const { ethers, deployments, network } = require("hardhat");
 const {
   developmentChains,
   networkConfig,
+  INITIAL_PRICE,
 } = require("../helper-hardhat-config");
 
 !developmentChains.includes(network.name)
   ? describe.skip
   : describe("HeroNFT Tests", function () {
       let heroNFT;
-      let heroERC20;
       let priceOfMint = hre.ethers.utils.parseEther("15");
       let minterAccount;
 
@@ -21,23 +21,11 @@ const {
         accounts = await ethers.getSigners();
         deployer = accounts[0];
         minterAccount = accounts[1];
-        await deployments.fixture(["mocks", "erc20NFTDeploy"]);
+        await deployments.fixture(["mocks", "nftDeploy"]);
 
-        // Get the Contracts
-        heroERC20 = await ethers.getContract("HeroToken");
+        // Get the Contract
         heroNFT = await ethers.getContract("HeroNFT");
         vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock");
-
-        // Pre-approve the NFT to spend the ERC20:
-        await heroERC20.approve(
-          heroNFT.address,
-          hre.ethers.utils.parseEther("100000")
-        );
-
-        // Allow the nft contract from the minter account to spend the erc20:
-        await heroERC20
-          .connect(minterAccount)
-          .approve(heroNFT.address, hre.ethers.utils.parseEther("900"));
       });
 
       describe("constructor", () => {
@@ -51,35 +39,51 @@ const {
 
       // Test Minting:
       describe("NFT Minting", () => {
-        it("Should reject mintings that don't have enough of token to mint", async function () {
-          // send 5 token to minter
-          // approve minter
-          // expect mint to fail with error
-          let tokensTransfered = hre.ethers.utils.parseEther("5");
-
-          let transactionReceipt = await heroERC20.transfer(
-            minterAccount.getAddress(),
-            tokensTransfered
-          );
-          await transactionReceipt.wait(1);
-
-          // Make sure minter has the transfered balance:
-          let balanceOfMinter = await heroERC20.balanceOf(
-            minterAccount.getAddress()
-          );
-
-          expect(balanceOfMinter).to.equal(tokensTransfered.toString());
-
+        it("Should reject mintings that don't have enough money to mint", async function () {
+          let mintingPrice = hre.ethers.utils.parseEther("0.5");
           await expect(
-            heroNFT.connect(minterAccount).requestNft(tokensTransfered)
+            heroNFT.connect(minterAccount).requestNft({ value: mintingPrice })
           ).to.be.revertedWith("NeedMoreTokenToMint()");
         });
 
         it("emits an event and kicks off a random word request", async function () {
           const fee = await heroNFT.getMintFee();
+          await expect(heroNFT.requestNft({ value: fee })).to.emit(
+            heroNFT,
+            "NftRequested"
+          );
+        });
+      });
+
+      describe("Witdhraw", () => {
+        it("Should reject withdraw if not owner", async function () {
           await expect(
-            heroNFT.requestNft(hre.ethers.utils.parseEther("80"))
-          ).to.emit(heroNFT, "NftRequested");
+            heroNFT.connect(minterAccount).withdraw()
+          ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
+        it("Should withdraw the money in the contract and send to owner", async function () {
+          const fee = await heroNFT.getMintFee();
+          await heroNFT.requestNft({ value: fee });
+          await heroNFT.connect(minterAccount).requestNft({ value: fee });
+          const heroNFTBalance = await ethers.provider.getBalance(
+            heroNFT.address
+          );
+          const ownerBalancePreviousToWithdraw =
+            await ethers.provider.getBalance(deployer.address);
+          const expectedBalanceAfterWithdrawal =
+            ownerBalancePreviousToWithdraw + heroNFTBalance;
+
+          const txReceipt = await heroNFT.withdraw();
+          const gasUsed = await txReceipt.gasUsed;
+          const balanceAfterWithdrawal = await ethers.provider.getBalance(
+            deployer.address
+          );
+          const realExpectedBalance = expectedBalanceAfterWithdrawal - gasUsed;
+          assert.equal(
+            realExpectedBalance.toString(),
+            balanceAfterWithdrawal.toString()
+          );
         });
       });
 
